@@ -1,0 +1,84 @@
+body > * {
+    margin-bottom: 1.5rem;
+}
+
+.block.block-start {
+    border-left: 4px solid black;
+}
+
+.block {
+    --size: 4rem;
+    height: var(--size);
+    width: var(--size);
+    text-align: center;
+    line-height: var(--size);
+    overflow-x: hidden;
+    border-left: 4px solid transparent;
+}
+
+.null {
+    background-color: black;
+}
+
+.free {
+    background-color: #60ff60;
+}
+
+.occupied {
+    background-color: #ff8080;
+}
+
+.unused {
+    background-color: grey;
+}
+
+.response {
+    border: none;
+    min-width: 2rem;
+}
+
+.controls-cell {
+    border: none;
+}
+
+.controls-cell > * {
+    margin-left: 6px;
+}
+
+.controls-cell > :first-child {
+    margin-left: 0px;
+}
+
+.no-value {
+    font-style: italic;
+    color: #787878;
+}
+
+#allocation {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 4px;
+}
+
+table {
+    min-width: 30rem;
+    border-collapse: collapse;
+}
+
+tbody tr:nth-child(odd) td {
+    background-color: #ffffd0;
+}
+
+tbody tr td:last-child {
+    background-color: transparent;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 6px;
+}
+
+td.numeric {
+    text-align: right;
+    font-family: monospace;
+}

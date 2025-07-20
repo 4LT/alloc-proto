@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Variable-Size Contiguous Block Entity Allocator Prototype</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <div>
+        <label for="alloc-input">Blocks to allocate:</label>
+        <input type="number" id="alloc-input" min="1" max="8" value="1"></input>
+        <button type="button" id="alloc-button">Allocate!</button>
+        <button type="button" id="reset-button">Reset</button>
+        <button type="button" id="free-button">Free</button>
+    </div>
+
+    <div id="allocation">
+    </div>
+
+    <table>
+        <caption>Handles</caption>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Index</th>
+                <th class="controls-cell"></th>
+                <th class="response"></th>
+            </tr>
+        </thead>
+        <tbody id="handles">
+        </tbody>
+    </table>
+</body>
+</html>
+
