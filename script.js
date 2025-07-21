@@ -182,10 +182,9 @@
                 const probeBlock = this.memory[probeIdx];
 
                 if (
-                    probeBlock.id > 0
-                    && probeBlock.blockCt + probeIdx > handle.idx
+                    probeBlock.blockCt + probeIdx > handle.idx
                 ) {
-                    console.warn("get: handle inside allocated body");
+                    console.warn("get: handle inside segment body");
                     return null;
                 }
             }
@@ -196,9 +195,9 @@
                 return block;
             } else {
                 if (block.id === 0) {
-                    console.warn("get: handle idx points to null block");
+                    console.warn("get: handle idx points to free segment");
                 } else {
-                    console.warn("get: handle is invalid for block");
+                    console.warn("get: handle is invalid for segment");
                 }
 
                 return null;
@@ -434,7 +433,7 @@
 
                     if (success) {
                         signalResponse(EMOJI.CHECK);
-                        this.render(ctx);
+                        this._renderMemory(allocContainer);
                     } else {
                         signalResponse(EMOJI.RED_X);
                     }
@@ -445,7 +444,7 @@
 
                 removeBtn.addEventListener('click', () => {
                     this.handles.splice(handleIdx, 1);
-                    this.render(ctx);
+                    this._renderHandles(ctx);
                 });
 
                 readBtn.type = "button";
