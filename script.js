@@ -111,15 +111,12 @@
             return handle;
         }
 
-        free(idx) {
-            if (idx <= 0 || idx >= this.memory.length) {
-                throw new Error("free: Index out of bounds");
-            }
+        free(handle) {
+            const blockStart = this.get(handle);
+            const idx = handle.idx;
 
-            const blockStart = this.memory[idx];
-
-            if (!(blockStart instanceof OccupiedStart)) {
-                throw new Error("free: Invalid block to free");
+            if (blockStart == null) {
+                return false;
             }
 
             // END of use of privileged information
@@ -135,13 +132,15 @@
                 if (leftBlock.id === 0 && leftBlock.blockCt === blockAlign) {
                     this._removeFree(leftIdx, blockOrder);
                     this._fillFree(leftIdx, blockStart.blockCt + blockAlign);
-                    return;
+                    return true;
                 }
             }
 
             this._fillFree(idx, blockStart.blockCt);
+            return true;
         }
 
+        /*
         get(handle) {
             if (handle.idx >= this.memory.length) {
                 return null;
@@ -157,6 +156,51 @@
             if (block.id === handle.id) {
                 return block;
             } else {
+                return null;
+            }
+        }
+        */
+
+        get(handle) {
+            if (handle.id === 0) {
+                console.warn("get: bad handle, id cannot be 0");
+                return null;
+            }
+
+            if (handle.idx <= 0 || handle.idx > this.memory.length) {
+                console.warn("get: handle out of bounds");
+                return null;
+            }
+
+            for (let align = this.maxAlign; align > 1; align/= 2) {
+                const probeIdx = Math.floor(handle.idx / align) * align;
+
+                if (probeIdx === 0 || probeIdx === handle.idx) {
+                    continue;
+                }
+
+                const probeBlock = this.memory[probeIdx];
+
+                if (
+                    probeBlock.id > 0
+                    && probeBlock.blockCt + probeIdx > handle.idx
+                ) {
+                    console.warn("get: handle inside allocated body");
+                    return null;
+                }
+            }
+            
+            const block = this.memory[handle.idx];
+
+            if (block.id === handle.id) {
+                return block;
+            } else {
+                if (block.id === 0) {
+                    console.warn("get: handle idx points to null block");
+                } else {
+                    console.warn("get: handle is invalid for block");
+                }
+
                 return null;
             }
         }
@@ -282,8 +326,8 @@
         handles;
         reset;
 
-        free(idx) {
-            return this.allocator.free(idx);
+        free(handle) {
+            return this.allocator.free(handle);
         }
 
         alloc(blockCt) {
@@ -358,7 +402,7 @@
                 const idxEl = document.createElement('TD');
                 const controlsEl = document.createElement('TD');
                 const responseEl = document.createElement('TD');
-                const markFreeBtn = document.createElement('BUTTON');
+                const freeBtn = document.createElement('BUTTON');
                 const removeBtn = document.createElement('BUTTON');
                 const readBtn = document.createElement('BUTTON');
                 const writeBtn = document.createElement('BUTTON');
@@ -382,15 +426,15 @@
                 responseEl.classList = "response";
                 controlsEl.classList = "controls-cell";
 
-                markFreeBtn.type = "button";
-                markFreeBtn.innerText = "Mark for Free";
+                freeBtn.type = "button";
+                freeBtn.innerText = "Free";
 
-                markFreeBtn.addEventListener('click', () => {
-                    const ent = this.getEntity(handle);
+                freeBtn.addEventListener('click', () => {
+                    const success = this.free(handle);
 
-                    if (ent) {
-                        ent.markedForFree = true;
+                    if (success) {
                         signalResponse(EMOJI.CHECK);
+                        this.render(ctx);
                     } else {
                         signalResponse(EMOJI.RED_X);
                     }
@@ -425,7 +469,7 @@
                     if (readWriteField.classList.contains("no-value")) {
                         signalResponse(EMOJI.RED_X);
                     } else {
-                        const ent = this.getEntity(handle);
+                        const ent =  this.getEntity(handle);
 
                         if (ent) {
                             ent.value = readWriteField.value;
@@ -448,7 +492,7 @@
                     }
                 });
 
-                controlsEl.appendChild(markFreeBtn);
+                controlsEl.appendChild(freeBtn);
                 controlsEl.appendChild(removeBtn);
                 controlsEl.appendChild(readBtn);
                 controlsEl.appendChild(writeBtn);
@@ -502,7 +546,6 @@
     window.addEventListener('load', () => {
         const allocBtn = document.getElementById("alloc-button");
         const resetBtn = document.getElementById("reset-button");
-        const freeBtn = document.getElementById("free-button");
         const allocInput = document.getElementById("alloc-input");
         const allocContainer = document.getElementById("allocation");
         const handleContainer = document.getElementById("handles");
@@ -523,17 +566,6 @@
 
         resetBtn.addEventListener('click', () => {
             app.reset();
-            app.render(context);
-        });
-
-        freeBtn.addEventListener('click', () => {
-            const allocations = app.allocations();
-
-            for (const [idx, allocHead] of allocations) {
-                if (allocHead.markedForFree) {
-                    app.free(idx);
-                }
-            }
             app.render(context);
         });
     });
