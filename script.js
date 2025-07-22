@@ -69,33 +69,46 @@
         reset() {
             this.memory = [NULL_BLOCK];
             this.freeHeads = new Array(ceil_log2(this.maxOrder + 1)).fill(0);
-            this.handles = [];
             this.nextId = 1;
         }
 
         alloc(blockCt) {
             const block = new OccupiedStart(blockCt, this.nextId);
             this.nextId++;
-            const order = ceil_log2(blockCt);
-            const align = 2 ** order;
+            let blockOrder = ceil_log2(blockCt);
+            let blockAlign = 2 ** blockOrder;
             let idx;
-            let blocksLeft = blockCt;
 
-            if (this.freeHeads[order] > 0) {
-                const gap = align - blockCt;
-                idx = this._popFree(order);
-                this.memory[idx] = block;
+            let order = blockOrder;
+            let align = blockAlign;
+            while (order <= this.maxOrder) {
+                if (this.freeHeads[order] > 0) {
+                    let blocksLeft = blockCt;
+                    const gap = align - blockCt;
+                    idx = this._popFree(order);
+                    this.memory[idx] = block;
 
-                blocksLeft--;
-                let ofs = 1;
+                    blocksLeft--;
+                    let ofs = 1;
 
-                for (; blocksLeft > 0; blocksLeft--, ofs++) {
-                    this.memory[idx + ofs] = OCCUPIED_REST_BLOCK;
+                    for (; blocksLeft > 0; blocksLeft--, ofs++) {
+                        this.memory[idx + ofs] = OCCUPIED_REST_BLOCK;
+                    }
+
+                    this._fillFree(idx + ofs, gap);
+                    break;
                 }
 
-                this._fillFree(idx + ofs, gap);
-            } else {
-                const gap = (align - this.memory.length % align) % align;
+                order++;
+                align*= 2;
+            }
+
+            if (order > this.maxOrder) {
+                let blocksLeft = blockCt;
+                const gap = (
+                    blockAlign - this.memory.length % blockAlign
+                ) % blockAlign;
+
                 idx = this.memory.length + gap;
                 this._fillFree(this.memory.length, gap);
                 this.memory.push(block);
@@ -106,9 +119,7 @@
                 }
             }
 
-            const handle = new Handle(block.id, idx);
-            this.handles.push(handle);
-            return handle;
+            return new Handle(block.id, idx);
         }
 
         free(handle) {
