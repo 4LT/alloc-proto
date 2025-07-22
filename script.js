@@ -150,6 +150,26 @@
                 blockAlign*= 2;
             }
 
+            let rightOfs = 0;
+            while (rightOfs <= this.maxAlign / 2) {
+                const rightIdx = idx + freeCt + rightOfs;
+
+                if (rightIdx >= this.memory.length) {
+                    break;
+                }
+
+                const rightBlock = this.memory[rightIdx];
+                const rightOrder = ceil_log2(rightBlock.blockCt);
+
+                if (rightBlock.id === 0) {
+                    rightOfs+= rightBlock.blockCt;
+                    this._removeFree(rightIdx, rightOrder);
+                } else {
+                    break;
+                }
+            }
+            freeCt+= rightOfs;
+
             this._fillFree(idx, freeCt);
             return true;
         }
