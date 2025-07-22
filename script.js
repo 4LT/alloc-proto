@@ -170,7 +170,12 @@
             }
             freeCt+= rightOfs;
 
-            this._fillFree(idx, freeCt);
+            if (idx + freeCt === this.memory.length) {
+                this.memory = this.memory.slice(0, idx);
+            } else {
+                this._fillFree(idx, freeCt);
+            }
+
             return true;
         }
 
@@ -180,7 +185,7 @@
                 return null;
             }
 
-            if (handle.idx <= 0 || handle.idx > this.memory.length) {
+            if (handle.idx <= 0 || handle.idx >= this.memory.length) {
                 console.warn("get: handle out of bounds");
                 return null;
             }
