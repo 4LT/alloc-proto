@@ -113,53 +113,46 @@
 
         free(handle) {
             const blockStart = this.get(handle);
-            const idx = handle.idx;
 
             if (blockStart == null) {
                 return false;
             }
 
-            // END of use of privileged information
-            // (can't know block types)
+            let idx = handle.idx;
+            let blockOrder = ceil_log2(blockStart.blockCt);
+            let blockAlign = 2 ** blockOrder;
+            let freeCt = blockStart.blockCt;
 
-            const blockOrder = ceil_log2(blockStart.blockCt);
-            const blockAlign = 2 ** blockOrder;
-            const leftIdx = Math.floor(idx / blockAlign / 2) * blockAlign * 2;
+            while (blockAlign < this.maxAlign) {
+                const leftIdx =
+                    Math.floor(idx / blockAlign / 2) * blockAlign * 2;
 
-            if (leftIdx > 0 && leftIdx !== idx) {
-                const leftBlock = this.memory[leftIdx];
-
-                if (leftBlock.id === 0 && leftBlock.blockCt === blockAlign) {
-                    this._removeFree(leftIdx, blockOrder);
-                    this._fillFree(leftIdx, blockStart.blockCt + blockAlign);
-                    return true;
+                if (leftIdx === 0) {
+                    break;
                 }
+
+                if (leftIdx !== idx) {
+                    const leftBlock = this.memory[leftIdx];
+
+                    if (
+                        leftBlock.id === 0
+                        && leftBlock.blockCt === blockAlign
+                    ) {
+                        freeCt+= blockAlign;
+                        idx = leftIdx;
+                        this._removeFree(leftIdx, blockOrder);
+                    } else {
+                        break;
+                    }
+                } 
+
+                blockOrder++;
+                blockAlign*= 2;
             }
 
-            this._fillFree(idx, blockStart.blockCt);
+            this._fillFree(idx, freeCt);
             return true;
         }
-
-        /*
-        get(handle) {
-            if (handle.idx >= this.memory.length) {
-                return null;
-            }
-            
-            const block = this.memory[handle.idx];
-
-            if (!testStart(block)) {
-                throw new Error("get: Tried to get non-head block");
-            }
-
-            // Prevent access from invalid handles
-            if (block.id === handle.id) {
-                return block;
-            } else {
-                return null;
-            }
-        }
-        */
 
         get(handle) {
             if (handle.id === 0) {
@@ -227,7 +220,7 @@
                 const blockMaxOrder = floor_log2(blockCt);
                 const order = Math.min(blockMaxOrder, idxMaxOrder);
                 const align = 2 ** order;
-                const freeStart = new FreeStart(blockCt);
+                const freeStart = new FreeStart(align);
                 
                 this.memory[idx] = freeStart;
 
