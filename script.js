@@ -1,10 +1,4 @@
 (() => {
-    class NonCriticalError extends Error {
-        constructor(err) {
-            super(err);
-        }
-    }
-
     class Handle {
         constructor(id, idx) {
             this.id = id;
@@ -21,8 +15,6 @@
             this.blockCt = blockCt;
         }
 
-        prev = 0;
-        next = 0;
         id = 0;
         blockCt;
     }
@@ -31,10 +23,8 @@
         constructor(blockCt, id) {
             super(blockCt);
             this.id = id;
-            this.markedForFree = false;
         }
 
-        markedForFree;
         value = "";
     }
 
@@ -42,6 +32,9 @@
         constructor(blockCt) {
             super(blockCt);
         }
+
+        prev = 0;
+        next = 0;
     }
 
     const NULL_BLOCK = Symbol();
@@ -233,26 +226,22 @@
             }
         }
 
-        allocations() {
-            const allocs = [];
-            
+        *allocations() {
             let idx = 1;
             while (idx < this.memory.length) {
                 const segment = this.memory[idx];
 
                 if (segment.id > 0) {
-                    allocs.push([idx, segment]);
+                    yield [idx, segment];
                 }
 
                 idx+= segment.blockCt;
             }
-
-            return allocs;
         }
 
         _fillFree(idx, blockCt) {
             while (blockCt > 0) {
-                const [idxMaxOrder] = this._maxOrderAlignForIdx(idx);
+                const idxMaxOrder = this._maxOrderForIdx(idx);
                 const blockMaxOrder = floor_log2(blockCt);
                 const order = Math.min(blockMaxOrder, idxMaxOrder);
                 const align = 2 ** order;
@@ -327,7 +316,7 @@
             }
         }
 
-        _maxOrderAlignForIdx(idx) {
+        _maxOrderForIdx(idx) {
             let align = this.maxAlign;
             let order = this.maxOrder;
 
@@ -336,7 +325,7 @@
                 order--;
             }
 
-            return [order, align];
+            return order;
         }
     }
 
@@ -567,9 +556,6 @@
 
         return l;
     }
-
-    const ceil_pot = (x) => 2 ** ceil_log2(x);
-    const floor_pot = (x) => 2 ** floor_log2(x);
 
     window.addEventListener('load', () => {
         const allocBtn = document.getElementById("alloc-button");
